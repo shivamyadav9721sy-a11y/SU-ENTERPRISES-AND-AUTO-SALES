@@ -33,7 +33,7 @@ table.rec{width:100%;border-collapse:collapse;min-width:640px}.rec th,.rec td{bo
 }
 </style></head><body><div class="wrap">
 <div class="noprint">
-<h1>SU Enterprises and Auto Sales – Billing</h1>
+<h1>SU Enterprises and Auto Sales – Billing <small style="color:var(--mu);font-weight:400">GSTIN: 09BJTPY9326G1Z7</small></h1>
 <div class="tabs"><button id="t1" class="on" onclick="tab(1)">New Bill</button><button id="t2" onclick="tab(2)">All Records</button></div>
 
 <div id="s1">
@@ -53,7 +53,7 @@ table.rec{width:100%;border-collapse:collapse;min-width:640px}.rec th,.rec td{bo
 <div><label>GST rate % (prices include GST)</label><input id="gr" type="number" value="5" oninput="pv()"></div>
 <div><label>Note (optional)</label><input id="nt" oninput="pv()"></div></div></div>
 
-<div class="row" style="margin:0 0 12px"><button class="p" onclick="save(true)">Save &amp; Print</button><button onclick="save(false)">Save</button><button onclick="window.print()">Print only</button><button onclick="newBill()">New bill</button></div>
+<div class="row" style="margin:0 0 12px"><button class="p" onclick="save(true)">Save &amp; Print</button><button onclick="save(false)">Save</button><button onclick="window.print()">Print only</button><button onclick="newBill()">New bill</button><button style="background:#25D366;color:#000;border-color:#25D366" onclick="sharePdf(this)">Share PDF on WhatsApp</button><button onclick="wa()">Send text only</button><label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tx)"><input type="checkbox" id="aw" checked style="width:auto">Auto-share PDF on WhatsApp after Save &amp; Print</label></div>
 </div>
 
 <div id="s2" style="display:none"><div class="card">
@@ -65,6 +65,8 @@ table.rec{width:100%;border-collapse:collapse;min-width:640px}.rec th,.rec td{bo
 <h1 style="margin-top:14px">Bill preview</h1></div>
 
 <div class="pv"><div id="inv"></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </div>
 <script>
 const S={n:'SU ENTERPRISES AND AUTO SALES',a:'TEMA RAHMAT, KURTHIYA, Khalilabad, Sant Kabir Nagar, Uttar Pradesh - 272175',g:'09BJTPY9326G1Z7',p:'BJTPY9326G',m:'8176027237',o:'Satyam Yadav'};
@@ -90,7 +92,7 @@ function pv(){$('inv').innerHTML=inv(collect())}
 function inv(b){const c=calc(b),dd=b.date?b.date.split('-').reverse().join('/'):'';
 const rs=b.items.map((x,i)=>`<tr><td class="c">${i+1}</td><td>${esc(x.d)}${x.s?'<br><small>No: '+esc(x.s)+'</small>':''}</td><td class="c">87116020</td><td class="c">${x.q}</td><td class="r">${f2(x.r)}</td><td class="r">${f2(x.q*x.r)}</td></tr>`).join('');
 const pad='<tr style="height:'+Math.max(0,(9-b.items.length))*7+'mm"><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
-return`<table class="b"><tr><td colspan="6" class="c"><div style="font-size:18px;font-weight:bold">${S.n}</div>${S.a}<br>GSTIN: <b>${S.g}</b> | PAN: ${S.p} | Mobile: ${S.m}</td></tr>
+return`<table class="b"><tr><td colspan="6" class="c"><div style="font-size:18px;font-weight:bold">${S.n}</div>${S.a}<br>Mobile: ${S.m} | PAN: ${S.p}<div style="font-size:15px;margin-top:3px"><b>GSTIN: ${S.g}</b></div></td></tr>
 <tr><td colspan="6" class="c"><b>TAX INVOICE</b></td></tr>
 <tr><td colspan="3">Invoice No: <b>${esc(b.no)}</b><br>Date: <b>${dd}</b></td><td colspan="3">Place of Supply: Uttar Pradesh<br>Payment: ${esc(b.pm)}</td></tr>
 <tr><td colspan="6"><b>Bill To:</b> ${esc(b.cn)||'-'}<br>${esc(b.ca)}<br>Mobile: ${esc(b.cm)}${b.cg?' | GSTIN: '+esc(b.cg):''}</td></tr>
@@ -106,7 +108,18 @@ ${rs}${pad}
 function newBill(){editId=null;const d=new Date().toISOString().slice(0,10);$('dt').value=d;$('no').value=nextNo(d).no;['cn','cm','cg','ca','nt'].forEach(i=>$(i).value='');$('ds').value=0;$('gr').value=5;$('pm').value='Cash';items=[{d:'',q:1,r:0,s:''}];rows();tab(1)}
 function save(p){const b=collect();if(!b.cn.trim()||!b.items.length||calc(b).tot<=0){alert('Enter customer name and at least one item with a rate.');return}
 const a=db();if(editId){const i=a.findIndex(x=>x.id===editId);b.fy=a[i].fy;b.seq=a[i].seq;b.id=editId;a[i]=b}else{const n=nextNo(b.date);b.id='b'+Date.now();b.fy=n.fy;b.seq=n.seq;b.no=n.no;a.push(b);editId=b.id}
-if(!wr(a))return;$('no').value=b.no;pv();if(p)setTimeout(()=>window.print(),100);else alert('Saved: '+b.no)}
+if(!wr(a))return;$('no').value=b.no;pv();if(p)setTimeout(()=>{window.print();if($('aw').checked)sharePdf()},100);else alert('Saved: '+b.no)}
+function wa(){const b=collect(),c=calc(b);let n=(b.cm||'').replace(/\D/g,'');if(n.length<10){alert('Enter a valid customer mobile number first.');return}n='91'+n.slice(-10);
+const t='*'+S.n+'*\nGSTIN: '+S.g+'\n\nTax Invoice: *'+b.no+'*\nDate: '+b.date.split('-').reverse().join('/')+'\nCustomer: '+b.cn+'\n\n'+b.items.map((x,i)=>(i+1)+'. '+x.d+' x '+x.q+' = Rs.'+f2(x.q*x.r)).join('\n')+(b.ds?'\nDiscount: Rs.'+f2(b.ds):'')+'\n\n*Total (incl. GST): Rs.'+f2(c.tot)+'*\nPayment: '+b.pm+'\n\nThank you for shopping with us!\n'+S.n+' | '+S.m;
+const w=window.open('https://wa.me/'+n+'?text='+encodeURIComponent(t),'_blank');if(!w)alert('Your browser blocked WhatsApp. Tap the Send text only button.')}
+async function mkPdf(){pv();const cv=await html2canvas($('inv'),{scale:2,backgroundColor:'#ffffff'});const pdf=new window.jspdf.jsPDF('p','mm','a4');let w=194,h=cv.height*w/cv.width;if(h>281){w=w*281/h;h=281}pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,8,w,h);return pdf.output('blob')}
+async function sharePdf(btn){const b=collect();if(!b.cn.trim()||!b.items.length){alert('Fill in the bill first.');return}
+const nm=(b.no||'bill').replace(/\//g,'-')+'.pdf',old=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent='Making PDF…'}
+let blob;try{blob=await mkPdf()}catch(e){alert('Could not create the PDF. Check your internet connection and try again.');if(btn){btn.disabled=false;btn.textContent=old}return}
+if(btn){btn.disabled=false;btn.textContent=old}
+try{const f=new File([blob],nm,{type:'application/pdf'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:b.no,text:'Invoice '+b.no+' - '+S.n});return}}catch(e){if(e&&e.name==='AbortError')return}
+try{const d=window.claude&&await window.claude.use('downloads');if(d){await d.save({filename:nm,data:blob});alert('PDF saved. WhatsApp will open next: tap the paperclip and attach the saved PDF, then Send.')}else alert('Could not save the PDF on this device.')}catch(e){if(e&&e.code==='declined')return}
+wa()}
 function list(){const q=$('q').value.toLowerCase(),a=db().sort((x,y)=>y.date.localeCompare(x.date)||y.seq-x.seq).filter(b=>(b.no+b.cn+b.cm).toLowerCase().includes(q));
 $('sum').textContent=a.length+' bills | Total ₹ '+f2(a.reduce((s,b)=>s+calc(b).tot,0));
 $('rl').innerHTML=a.map(b=>`<tr><td>${esc(b.no)}</td><td>${b.date.split('-').reverse().join('/')}</td><td>${esc(b.cn)}</td><td>${esc(b.cm)}</td><td class="r">${f2(calc(b).tot)}</td><td><button onclick="openB('${b.id}')">Open / Print</button> <button class="d" onclick="del('${b.id}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="6">No records yet</td></tr>'}
