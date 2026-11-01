@@ -19,7 +19,8 @@
   button.green:hover{background:#14683c}
   button.danger{color:var(--bad)}
   .spacer{flex:1}
-  .invoice{background:#fff;border:1px solid var(--line);border-radius:8px;padding:24px}
+  .invoice{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12mm;max-width:210mm;min-height:297mm;margin:0 auto;display:flex;flex-direction:column}
+  .addbar{margin:10px 0}.addbar .add{margin:0}
   .head{display:flex;justify-content:space-between;gap:16px;border-bottom:3px solid var(--brand);padding-bottom:12px;margin-bottom:16px}
   .shop h1{margin:0 0 4px;font-size:24px;color:var(--brand)}
   .shop input{display:block;width:100%;border:1px solid transparent;padding:2px 4px;font-size:13px;color:var(--muted);background:transparent}
@@ -57,7 +58,7 @@
   .disc select{width:64px}.disc input{width:90px;text-align:right}
   .paidin{width:120px;text-align:right}
   .words{font-style:italic;color:var(--muted);margin-top:6px}
-  .sign{display:flex;justify-content:space-between;margin-top:46px;color:var(--muted);font-size:12px}
+  .sign{display:flex;justify-content:space-between;margin-top:auto;padding-top:46px;color:var(--muted);font-size:12px}
   .sign div{border-top:1px solid var(--muted);padding-top:4px;min-width:170px;text-align:center}
   .saved{margin-top:20px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px}
   .saved h3{margin:0 0 10px}
@@ -71,17 +72,18 @@
   @media(max-width:760px){
     .cust,.bottom{grid-template-columns:1fr}
     .head{flex-direction:column}.meta{text-align:left}.meta .row{justify-content:flex-start}
-    .invoice{padding:12px;overflow-x:auto}table{min-width:780px}
+    .invoice{padding:12px;overflow-x:auto;min-height:0}table{min-width:780px}
   }
   @media print{
     body{background:#fff}
     .wrap{max-width:none;padding:0}
     .toolbar,.saved,.add,.x,.toast,.noprint{display:none!important}
-    .invoice{border:0;padding:0}
+    .invoice{border:0;border-radius:0;padding:0;max-width:none;min-height:272mm}
+    tr{page-break-inside:avoid}thead{display:table-header-group}.bottom,.sign{page-break-inside:avoid}
     input,select,textarea{border:0!important;padding:2px 0!important;background:transparent!important;-webkit-appearance:none;appearance:none;outline:none!important}
     .shop input{color:#333}
     th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    @page{size:A4;margin:12mm}
+    @page{size:A4 portrait;margin:12mm}
   }
 </style>
 </head>
@@ -135,8 +137,8 @@
       </thead>
       <tbody id="rows"></tbody>
     </table>
-    <button class="add" onclick="addRow()">+ Add Item</button>
-    <label class="noprint" style="margin-left:12px;cursor:pointer"><input type="checkbox" id="incl" checked style="width:auto;vertical-align:middle"> Rates include GST</label>
+    <div class="addbar noprint"><button class="add" onclick="addRow()">+ Add Item</button>
+    <label style="margin-left:12px;cursor:pointer"><input type="checkbox" id="incl" checked style="width:auto;vertical-align:middle"> Rates include GST</label></div>
     <datalist id="catalog"></datalist>
 
     <div class="bottom">
