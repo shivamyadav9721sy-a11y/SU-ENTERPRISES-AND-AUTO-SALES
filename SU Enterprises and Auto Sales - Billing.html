@@ -74,16 +74,58 @@
     .head{flex-direction:column}.meta{text-align:left}.meta .row{justify-content:flex-start}
     .invoice{padding:12px;overflow-x:auto;min-height:0}table{min-width:780px}
   }
+  .pd{display:none}
   @media print{
-    body{background:#fff}
-    .wrap{max-width:none;padding:0}
-    .toolbar,.saved,.add,.x,.toast,.noprint{display:none!important}
-    .invoice{border:0;border-radius:0;padding:0;max-width:none;min-height:272mm}
-    tr{page-break-inside:avoid}thead{display:table-header-group}.bottom,.sign{page-break-inside:avoid}
-    input,select,textarea{border:0!important;padding:2px 0!important;background:transparent!important;-webkit-appearance:none;appearance:none;outline:none!important}
-    .shop input{color:#333}
-    th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    @page{size:A4 portrait;margin:12mm}
+    @page{size:A4 portrait;margin:10mm}
+    html,body{background:#fff;width:190mm;font-size:12px}
+    .wrap{max-width:none;padding:0;margin:0}
+    .toolbar,.saved,.add,.x,.toast,.noprint,.addbar{display:none!important}
+    .invoice{border:0;border-radius:0;padding:0;margin:0;width:190mm;max-width:190mm;min-height:272mm;display:flex;flex-direction:column;
+      -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    /* header */
+    .head{border-bottom:2.5px solid var(--brand);padding-bottom:8px;margin-bottom:10px;gap:10px}
+    .shop h1{font-size:21px;margin-bottom:3px}
+    .shop input{font-size:11.5px;color:#333!important;padding:1px 0!important}
+    .meta{min-width:62mm}
+    .meta h2{font-size:17px;letter-spacing:1.5px;margin-bottom:5px}
+    .meta .row{margin-bottom:2px;font-size:12px}
+    .meta input{width:34mm;font-size:12px;font-weight:600;text-align:right}
+    /* customer block */
+    .cust{border:1px solid var(--line);border-radius:3px;padding:7px 9px;gap:6px 14px;margin-bottom:10px}
+    .cust label{font-size:9.5px;margin-bottom:1px}
+    .cust input,.cust textarea{font-size:12.5px;font-weight:600}
+    textarea{resize:none;overflow:hidden}
+    /* items table */
+    table{table-layout:fixed;width:100%}
+    thead{display:table-header-group}
+    tr{page-break-inside:avoid;break-inside:avoid}
+    th{background:var(--brand)!important;color:#fff!important;font-size:11px;padding:6px 5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    td{padding:5px;border-bottom:1px solid var(--line);vertical-align:top;font-size:12px}
+    th.sn,td.sn{width:8mm;text-align:center}
+    th:nth-child(3),td:nth-child(3){width:23mm}
+    th:nth-child(4),td:nth-child(4){width:13mm}
+    th:nth-child(5),td:nth-child(5){width:25mm}
+    th:nth-child(6),td:nth-child(6){width:15mm}
+    th:nth-child(7),td:nth-child(7){width:27mm}
+    th:nth-child(8),td:nth-child(8){display:none}
+    td .desc{display:none!important}
+    td .pd{display:block;white-space:normal;word-break:break-word;line-height:1.35;font-weight:600}
+    td .hsn,td .qty,td .rate,td .gst{padding:0!important;font-size:12px}
+    td .qty,td .rate,td .gst{text-align:right}
+    td .gst{text-align-last:right}
+    .amt{padding-right:5px;font-size:12px}
+    input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+    ::placeholder{color:transparent!important}
+    /* totals + notes */
+    .bottom{grid-template-columns:1fr 78mm;gap:14px;margin-top:12px;page-break-inside:avoid;break-inside:avoid}
+    .bottom textarea{font-size:11.5px;padding:2px 0!important;width:100%}
+    .words{font-size:11.5px;margin-top:8px;color:#333}
+    .totals table td{padding:3px 5px;font-size:12px}
+    .totals .grand td,.totals .due td{font-size:14px}
+    .paidin{width:30mm;font-size:12px;text-align:right}
+    /* signature */
+    .sign{margin-top:auto;padding-top:40px;page-break-inside:avoid;break-inside:avoid;font-size:11px}
+    input,select,textarea{border:0!important;padding:2px 0!important;background:transparent!important;-webkit-appearance:none;appearance:none;outline:none!important;box-shadow:none!important}
   }
 </style>
 </head>
@@ -255,7 +297,7 @@ function addRow(item){
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td class="sn"></td>
-    <td><input class="desc" list="catalog" placeholder="Type or pick a product / service" value="${esc(item.desc)}"></td>
+    <td><input class="desc" list="catalog" placeholder="Type or pick a product / service" value="${esc(item.desc)}"><div class="pd"></div></td>
     <td><input class="hsn" placeholder="HSN" value="${esc(item.hsn||'')}"></td>
     <td><input class="qty num" type="number" min="0" step="any" value="${esc(item.qty)}"></td>
     <td><input class="rate num" type="number" min="0" step="any" value="${esc(item.rate)}"></td>
@@ -309,6 +351,7 @@ function recalc(){
   [...$('rows').children].forEach((tr,i)=>{
     tr.querySelector('.sn').textContent=i+1;
     tr.querySelector('.amt').textContent=fmt(t.lines[i].amount);
+    tr.querySelector('.pd').textContent=tr.querySelector('.desc').value;
   });
   $('tSub').textContent=fmt(t.sub);
   $('tDisc').textContent='- '+fmt(t.disc);
@@ -471,6 +514,8 @@ function loadShop(){
 }));
 $('cMobile').addEventListener('input',e=>{ e.target.value=e.target.value.replace(/[^0-9+\-\s]/g,''); });
 ['dType','dVal','paid','incl'].forEach(id=>['input','change'].forEach(ev=>$(id).addEventListener(ev,recalc)));
+
+window.addEventListener('beforeprint',recalc);
 
 /* ---------- start ---------- */
 loadShop(); renderSaved(); newBill();
