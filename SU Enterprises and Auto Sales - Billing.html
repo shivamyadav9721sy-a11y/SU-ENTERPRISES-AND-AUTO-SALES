@@ -53,7 +53,7 @@ table.rec{width:100%;border-collapse:collapse;min-width:640px}.rec th,.rec td{bo
 <div><label>GST rate % (prices include GST)</label><input id="gr" type="number" value="5" oninput="pv()"></div>
 <div><label>Note (optional)</label><input id="nt" oninput="pv()"></div></div></div>
  
-<div class="row" style="margin:0 0 12px"><button class="p" onclick="save(true)">Save &amp; Print</button><button onclick="save(false)">Save</button><button onclick="window.print()">Print only</button><button onclick="newBill()">New bill</button><button style="background:#25D366;color:#000;border-color:#25D366" onclick="sharePdf(this)">Share PDF on WhatsApp</button><button onclick="wa()">Send text only</button><label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tx)"><input type="checkbox" id="aw" checked style="width:auto">Auto-share PDF on WhatsApp after Save &amp; Print</label></div>
+<div class="row" style="margin:0 0 12px"><button class="p" onclick="save(true)">Save &amp; Print</button><button onclick="save(false)">Save</button><button onclick="window.print()">Print only</button><button onclick="newBill()">New bill</button><button style="background:#25D366;color:#000;border-color:#25D366" onclick="sharePdf(this)">Share PDF on WhatsApp</button><button style="background:#25D366;color:#000;border-color:#25D366" onclick="sharePdf(this,'chat')">PDF + open customer's chat</button><button onclick="wa()">Send text only</button><label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tx)"><input type="checkbox" id="aw" checked style="width:auto">Auto-share PDF on WhatsApp after Save &amp; Print</label></div>
 </div>
  
 <div id="s2" style="display:none"><div class="card">
@@ -114,12 +114,12 @@ function wa(){const b=collect(),c=calc(b);let n=(b.cm||'').replace(/\D/g,'');if(
 const t='*'+S.n+'*\nGSTIN: '+S.g+'\n\nTax Invoice: *'+b.no+'*\nDate: '+b.date.split('-').reverse().join('/')+'\nCustomer: '+b.cn+'\n\n'+b.items.map((x,i)=>(i+1)+'. '+x.d+' x '+x.q+' = Rs.'+f2(x.q*x.r)).join('\n')+(b.ds?'\nDiscount: Rs.'+f2(b.ds):'')+'\n\n*Total (incl. GST): Rs.'+f2(c.tot)+'*\nPayment: '+b.pm+'\n\nThank you for shopping with us!\n'+S.n+' | '+S.m;
 const url='https://wa.me/'+n+'?text='+encodeURIComponent(t),w=window.open(url,'_blank');if(!w)location.href=url}
 async function mkPdf(){pv();const cv=await html2canvas($('inv'),{scale:2,backgroundColor:'#ffffff'});const pdf=new window.jspdf.jsPDF('p','mm','a4');let w=194,h=cv.height*w/cv.width;if(h>281){w=w*281/h;h=281}pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,8,w,h);return pdf.output('blob')}
-async function sharePdf(btn){const b=collect();if(!b.cn.trim()||!b.items.length){alert('Fill in the bill first.');return}
+async function sharePdf(btn,mode){const b=collect();if(!b.cn.trim()||!b.items.length){alert('Fill in the bill first.');return}
 const nm=(b.no||'bill').replace(/\//g,'-')+'.pdf',old=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent='Making PDF…'}
 let blob;try{blob=await mkPdf()}catch(e){alert('Could not create the PDF. Check your internet connection and try again.');if(btn){btn.disabled=false;btn.textContent=old}return}
 if(btn){btn.disabled=false;btn.textContent=old}
-const hasNo=(b.cm||'').replace(/\D/g,'').length>=10;
-try{const f=new File([blob],nm,{type:'application/pdf'});if(!hasNo&&navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:b.no,text:'Invoice '+b.no+' - '+S.n});return}}catch(e){if(e&&e.name==='AbortError')return}
+const chat=mode==='chat'&&(b.cm||'').replace(/\D/g,'').length>=10;
+try{const f=new File([blob],nm,{type:'application/pdf'});if(!chat&&navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:b.no,text:'Invoice '+b.no+' - '+S.n});return}}catch(e){if(e&&e.name==='AbortError')return}
 try{const d=window.claude&&await window.claude.use('downloads');if(d){await d.save({filename:nm,data:blob});}else{const u=URL.createObjectURL(blob),l=document.createElement('a');l.href=u;l.download=nm;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),8000)}}catch(e){if(e&&e.code==='declined')return}
 wa()}
 function list(){const q=$('q').value.toLowerCase(),a=db().sort((x,y)=>y.date.localeCompare(x.date)||y.seq-x.seq).filter(b=>(b.no+b.cn+b.cm).toLowerCase().includes(q));
