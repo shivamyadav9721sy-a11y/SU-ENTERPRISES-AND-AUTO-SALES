@@ -35,7 +35,7 @@ table.rec{width:100%;border-collapse:collapse;min-width:640px}.rec th,.rec td{bo
 <div class="noprint">
 <h1>SU Enterprises and Auto Sales – Billing <small style="color:var(--mu);font-weight:400">GSTIN: 09BJTPY9326G1Z7</small></h1>
 <div class="tabs"><button id="t1" class="on" onclick="tab(1)">New Bill</button><button id="t2" onclick="tab(2)">All Records</button></div>
-
+ 
 <div id="s1">
 <div class="card"><div class="g">
 <div><label>Invoice No.</label><input id="no" readonly></div>
@@ -45,28 +45,29 @@ table.rec{width:100%;border-collapse:collapse;min-width:640px}.rec th,.rec td{bo
 <div><label>Customer GSTIN (optional)</label><input id="cg" oninput="pv()"></div>
 <div><label>Payment mode</label><select id="pm" onchange="pv()"><option>Cash</option><option>UPI</option><option>Card</option><option>Finance / Loan</option><option>Credit</option></select></div>
 </div><div style="margin-top:8px"><label>Customer address</label><input id="ca" oninput="pv()"></div></div>
-
+ 
 <div class="card"><div class="sc"><table class="it"><thead><tr><th style="width:26%">Pick model (auto-fills)</th><th>Description</th><th style="width:70px">Qty</th><th style="width:100px">Rate (incl. GST)</th><th>Chassis / Battery No.</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
 <div class="row"><button onclick="addRow()">+ Add item</button></div>
 <div class="g" style="margin-top:10px">
 <div><label>Discount (₹)</label><input id="ds" type="number" value="0" oninput="pv()"></div>
 <div><label>GST rate % (prices include GST)</label><input id="gr" type="number" value="5" oninput="pv()"></div>
 <div><label>Note (optional)</label><input id="nt" oninput="pv()"></div></div></div>
-
+ 
 <div class="row" style="margin:0 0 12px"><button class="p" onclick="save(true)">Save &amp; Print</button><button onclick="save(false)">Save</button><button onclick="window.print()">Print only</button><button onclick="newBill()">New bill</button><button style="background:#25D366;color:#000;border-color:#25D366" onclick="sharePdf(this)">Share PDF on WhatsApp</button><button onclick="wa()">Send text only</button><label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tx)"><input type="checkbox" id="aw" checked style="width:auto">Auto-share PDF on WhatsApp after Save &amp; Print</label></div>
 </div>
-
+ 
 <div id="s2" style="display:none"><div class="card">
 <div class="g"><div><label>Search (invoice no / customer / mobile)</label><input id="q" oninput="list()"></div></div>
 <p id="sum" style="color:var(--mu)"></p>
 <div class="sc"><table class="rec"><thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Mobile</th><th class="r">Total ₹</th><th></th></tr></thead><tbody id="rl"></tbody></table></div>
-<div class="row"><button onclick="bk()">Copy backup of all records</button><button onclick="rs()">Restore from backup</button></div>
+<div class="row"><button class="p" onclick="xl()">Download Excel backup (.xlsx)</button><button onclick="$('xf').click()">Restore from Excel</button><input type="file" id="xf" accept=".xlsx,.xls" style="display:none" onchange="xr(this)"><button onclick="bk()">Copy backup of all records</button><button onclick="rs()">Restore from backup</button></div>
 <p style="color:var(--mu);font-size:12px">Records are stored in this browser/device. Take a backup regularly.</p></div></div>
 <h1 style="margin-top:14px">Bill preview</h1></div>
-
+ 
 <div class="pv"><div id="inv"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </div>
 <script>
 const S={n:'SU ENTERPRISES AND AUTO SALES',a:'TEMA RAHMAT, KURTHIYA, Khalilabad, Sant Kabir Nagar, Uttar Pradesh - 272175',g:'09BJTPY9326G1Z7',p:'BJTPY9326G',m:'8176027237',o:'Satyam Yadav'};
@@ -122,9 +123,50 @@ try{const d=window.claude&&await window.claude.use('downloads');if(d){await d.sa
 wa()}
 function list(){const q=$('q').value.toLowerCase(),a=db().sort((x,y)=>y.date.localeCompare(x.date)||y.seq-x.seq).filter(b=>(b.no+b.cn+b.cm).toLowerCase().includes(q));
 $('sum').textContent=a.length+' bills | Total ₹ '+f2(a.reduce((s,b)=>s+calc(b).tot,0));
-$('rl').innerHTML=a.map(b=>`<tr><td>${esc(b.no)}</td><td>${b.date.split('-').reverse().join('/')}</td><td>${esc(b.cn)}</td><td>${esc(b.cm)}</td><td class="r">${f2(calc(b).tot)}</td><td><button onclick="openB('${b.id}')">Open / Print</button> <button class="d" onclick="del('${b.id}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="6">No records yet</td></tr>'}
+$('rl').innerHTML=a.map(b=>`<tr><td>${esc(b.no)}</td><td>${b.date.split('-').reverse().join('/')}</td><td>${esc(b.cn)}</td><td>${esc(b.cm)}</td><td class="r">${f2(calc(b).tot)}</td><td><button onclick="openB('${b.id}')">Open / Print</button> <button class="d" data-del="${b.id}" onclick="del('${b.id}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="6">No records yet</td></tr>'}
 function openB(id){const b=db().find(x=>x.id===id);if(!b)return;editId=id;$('no').value=b.no;$('dt').value=b.date;$('cn').value=b.cn;$('cm').value=b.cm;$('cg').value=b.cg;$('ca').value=b.ca;$('pm').value=b.pm;$('ds').value=b.ds;$('gr').value=b.gr;$('nt').value=b.nt;items=b.items;rows();tab(1);scrollTo(0,0)}
-function del(id){if(confirm('Delete this bill permanently?')){wr(db().filter(x=>x.id!==id));list()}}
+let delArm=null;
+function del(id,btn){
+if(delArm!==id){delArm=id;list();const nb=document.querySelector('button[data-del="'+id+'"]');if(nb){nb.textContent='Tap again to confirm';nb.style.background='var(--dg)';nb.style.color='#fff'}
+setTimeout(()=>{if(delArm===id){delArm=null;if($('s2').style.display!=='none')list()}},4000);return}
+delArm=null;if(wr(db().filter(x=>x.id!==id))){if(editId===id)editId=null;list()}}
+async function xl(){
+const msg=t=>{$('sum').textContent=t};
+const a=db().sort((x,y)=>x.date.localeCompare(y.date)||x.seq-y.seq);
+if(!a.length){msg('No records to export yet.');return}
+if(!window.XLSX){msg('Excel library could not load. Check your internet connection and try again.');return}
+const dm=d=>d?d.split('-').reverse().join('/'):'';
+const bills=[],its=[];
+a.forEach(b=>{const c=calc(b);
+bills.push({'Invoice No':b.no,'Date':dm(b.date),'Customer':b.cn,'Mobile':b.cm,'Customer GSTIN':b.cg||'','Address':b.ca||'','Payment':b.pm,'Items':b.items.map(x=>x.d+' x'+x.q).join('; '),'Gross (₹)':c.sub,'Discount (₹)':b.ds,'GST %':b.gr,'Taxable Value (₹)':Math.round(c.tx*100)/100,'CGST (₹)':Math.round(c.h*100)/100,'SGST (₹)':Math.round(c.h*100)/100,'Round Off (₹)':Math.round(c.ro*100)/100,'Total (₹)':c.tot,'Note':b.nt||''});
+b.items.forEach(x=>its.push({'Invoice No':b.no,'Date':dm(b.date),'Customer':b.cn,'Description':x.d,'Chassis / Battery No':x.s||'','Qty':x.q,'Rate (₹)':x.r,'Amount (₹)':x.q*x.r}))});
+bills.push({'Invoice No':'TOTAL','Total (₹)':a.reduce((s,b)=>s+calc(b).tot,0)});
+const wb=XLSX.utils.book_new(),w1=XLSX.utils.json_to_sheet(bills),w2=XLSX.utils.json_to_sheet(its);
+w1['!cols']=[16,11,22,13,18,28,13,50,12,12,8,16,11,11,11,12,20].map(w=>({wch:w}));
+w2['!cols']=[16,11,22,55,22,6,11,12].map(w=>({wch:w}));
+XLSX.utils.book_append_sheet(wb,w1,'Bills');XLSX.utils.book_append_sheet(wb,w2,'Items');
+const nm='SU-Bills-Backup-'+new Date().toISOString().slice(0,10)+'.xlsx';
+const blob=new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+try{const d=window.claude&&await window.claude.use('downloads');if(d){await d.save({filename:nm,data:blob});msg('Excel backup saved: '+nm);return}}catch(e){if(e&&e.code==='declined')return}
+const u=URL.createObjectURL(blob),l=document.createElement('a');l.href=u;l.download=nm;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);msg('Excel backup downloaded: '+nm)}
+async function xr(inp){
+const msg=t=>{$('sum').textContent=t};const f=inp.files[0];inp.value='';if(!f)return;
+if(!window.XLSX){msg('Excel library could not load. Check your internet connection and try again.');return}
+try{
+const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+const bs=wb.Sheets['Bills'],is=wb.Sheets['Items'];
+if(!bs||!is){msg('This is not a backup file made by this page (Bills and Items sheets not found).');return}
+const iso=v=>{if(v==null||v==='')return'';if(typeof v==='number'){const d=new Date(Math.round((v-25569)*86400000));return d.toISOString().slice(0,10)}
+v=String(v).trim();let m=v.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');return v.slice(0,10)};
+const s=v=>v==null?'':String(v);
+const itemsBy={};XLSX.utils.sheet_to_json(is).forEach(r=>{const n=s(r['Invoice No']).trim();if(!n)return;(itemsBy[n]=itemsBy[n]||[]).push({d:s(r['Description']),s:s(r['Chassis / Battery No']),q:+r['Qty']||1,r:+r['Rate (₹)']||0})});
+const a=db();let add=0,skip=0;
+XLSX.utils.sheet_to_json(bs).forEach(r=>{const no=s(r['Invoice No']).trim();if(!no||no==='TOTAL')return;
+if(a.some(x=>x.no===no)||!itemsBy[no]){skip++;return}
+const p=no.split('/'),gr=r['GST %']===undefined||r['GST %']===''?5:+r['GST %'];
+a.push({id:'x'+no.replace(/\W/g,''),no,fy:p[1]||'',seq:parseInt(p[2],10)||0,date:iso(r['Date']),cn:s(r['Customer']),cm:s(r['Mobile']),cg:s(r['Customer GSTIN']),ca:s(r['Address']),pm:s(r['Payment'])||'Cash',ds:+r['Discount (₹)']||0,gr,nt:s(r['Note']),items:itemsBy[no]});add++});
+if(!wr(a))return;list();msg('Restored '+add+' bill(s) from Excel'+(skip?'; '+skip+' skipped (already present or no items)':'')+'. Total now '+a.length+' bills.')
+}catch(e){msg('Could not read this Excel file.')}}
 function bk(){const t=JSON.stringify(db());navigator.clipboard.writeText(t).then(()=>alert('Backup copied. Paste it into a Notes/WhatsApp message to keep it safe.'),()=>prompt('Copy this backup text:',t))}
 function rs(){const t=prompt('Paste backup text:');if(!t)return;try{const n=JSON.parse(t),a=db();n.forEach(b=>{if(!a.some(x=>x.id===b.id))a.push(b)});wr(a);list();alert('Restored.')}catch(e){alert('Invalid backup text.')}}
 newBill();
