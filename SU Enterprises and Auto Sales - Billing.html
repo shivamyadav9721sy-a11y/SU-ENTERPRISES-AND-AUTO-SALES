@@ -112,14 +112,15 @@ const a=db();if(editId){const i=a.findIndex(x=>x.id===editId);b.fy=a[i].fy;b.seq
 if(!wr(a))return;$('no').value=b.no;pv();if(p)setTimeout(()=>{window.print();if($('aw').checked)sharePdf()},100);else alert('Saved: '+b.no)}
 function wa(){const b=collect(),c=calc(b);let n=(b.cm||'').replace(/\D/g,'');if(n.length<10){alert('Enter a valid customer mobile number first.');return}n='91'+n.slice(-10);
 const t='*'+S.n+'*\nGSTIN: '+S.g+'\n\nTax Invoice: *'+b.no+'*\nDate: '+b.date.split('-').reverse().join('/')+'\nCustomer: '+b.cn+'\n\n'+b.items.map((x,i)=>(i+1)+'. '+x.d+' x '+x.q+' = Rs.'+f2(x.q*x.r)).join('\n')+(b.ds?'\nDiscount: Rs.'+f2(b.ds):'')+'\n\n*Total (incl. GST): Rs.'+f2(c.tot)+'*\nPayment: '+b.pm+'\n\nThank you for shopping with us!\n'+S.n+' | '+S.m;
-const w=window.open('https://wa.me/'+n+'?text='+encodeURIComponent(t),'_blank');if(!w)alert('Your browser blocked WhatsApp. Tap the Send text only button.')}
+const url='https://wa.me/'+n+'?text='+encodeURIComponent(t),w=window.open(url,'_blank');if(!w)location.href=url}
 async function mkPdf(){pv();const cv=await html2canvas($('inv'),{scale:2,backgroundColor:'#ffffff'});const pdf=new window.jspdf.jsPDF('p','mm','a4');let w=194,h=cv.height*w/cv.width;if(h>281){w=w*281/h;h=281}pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,8,w,h);return pdf.output('blob')}
 async function sharePdf(btn){const b=collect();if(!b.cn.trim()||!b.items.length){alert('Fill in the bill first.');return}
 const nm=(b.no||'bill').replace(/\//g,'-')+'.pdf',old=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent='Making PDF…'}
 let blob;try{blob=await mkPdf()}catch(e){alert('Could not create the PDF. Check your internet connection and try again.');if(btn){btn.disabled=false;btn.textContent=old}return}
 if(btn){btn.disabled=false;btn.textContent=old}
-try{const f=new File([blob],nm,{type:'application/pdf'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:b.no,text:'Invoice '+b.no+' - '+S.n});return}}catch(e){if(e&&e.name==='AbortError')return}
-try{const d=window.claude&&await window.claude.use('downloads');if(d){await d.save({filename:nm,data:blob});alert('PDF saved. WhatsApp will open next: tap the paperclip and attach the saved PDF, then Send.')}else alert('Could not save the PDF on this device.')}catch(e){if(e&&e.code==='declined')return}
+const hasNo=(b.cm||'').replace(/\D/g,'').length>=10;
+try{const f=new File([blob],nm,{type:'application/pdf'});if(!hasNo&&navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:b.no,text:'Invoice '+b.no+' - '+S.n});return}}catch(e){if(e&&e.name==='AbortError')return}
+try{const d=window.claude&&await window.claude.use('downloads');if(d){await d.save({filename:nm,data:blob});}else{const u=URL.createObjectURL(blob),l=document.createElement('a');l.href=u;l.download=nm;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),8000)}}catch(e){if(e&&e.code==='declined')return}
 wa()}
 function list(){const q=$('q').value.toLowerCase(),a=db().sort((x,y)=>y.date.localeCompare(x.date)||y.seq-x.seq).filter(b=>(b.no+b.cn+b.cm).toLowerCase().includes(q));
 $('sum').textContent=a.length+' bills | Total ₹ '+f2(a.reduce((s,b)=>s+calc(b).tot,0));
